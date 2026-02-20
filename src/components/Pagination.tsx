@@ -8,6 +8,23 @@ interface Props {
   itemsPerPage: number
 }
 
+function buildPages(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+
+  const pages: (number | '...')[] = [1]
+
+  if (current > 3) pages.push('...')
+
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  for (let i = start; i <= end; i++) pages.push(i)
+
+  if (current < total - 2) pages.push('...')
+
+  pages.push(total)
+  return pages
+}
+
 export default function Pagination({ currentPage, totalItems, itemsPerPage }: Props) {
   const router = useRouter()
   const pathname = usePathname()
@@ -20,19 +37,13 @@ export default function Pagination({ currentPage, totalItems, itemsPerPage }: Pr
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', String(page))
     router.push(`${pathname}?${params.toString()}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const pages: (number | '...')[] = []
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-      pages.push(i)
-    } else if (pages[pages.length - 1] !== '...') {
-      pages.push('...')
-    }
-  }
+  const pages = buildPages(currentPage, totalPages)
 
   return (
-    <div className="flex justify-center gap-2 mt-8 flex-wrap">
+    <div className="flex justify-center items-center gap-1.5 mt-10 flex-wrap">
       <button
         onClick={() => goTo(currentPage - 1)}
         disabled={currentPage <= 1}
@@ -43,14 +54,14 @@ export default function Pagination({ currentPage, totalItems, itemsPerPage }: Pr
 
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`dots-${i}`} className="px-3 py-1.5 text-gray-500">…</span>
+          <span key={`dots-${i}`} className="px-2 py-1.5 text-gray-500 text-sm select-none">…</span>
         ) : (
           <button
-            key={p}
+            key={`page-${p}`}
             onClick={() => goTo(p as number)}
-            className={`px-3 py-1.5 rounded text-sm transition-colors ${
+            className={`min-w-[36px] px-3 py-1.5 rounded text-sm transition-colors ${
               p === currentPage
-                ? 'bg-purple-600 text-white'
+                ? 'bg-purple-600 text-white font-semibold'
                 : 'bg-white/10 hover:bg-white/20'
             }`}
           >
@@ -66,6 +77,10 @@ export default function Pagination({ currentPage, totalItems, itemsPerPage }: Pr
       >
         Sau →
       </button>
+
+      <span className="text-xs text-gray-500 ml-2">
+        Trang {currentPage}/{totalPages}
+      </span>
     </div>
   )
 }

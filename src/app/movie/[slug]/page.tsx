@@ -1,8 +1,9 @@
-import { getMovieDetail } from '@/lib/api'
+import { getMovieDetail, getRelatedMovies } from '@/lib/api'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import FavoriteButton from '@/components/FavoriteButton'
+import MovieGrid from '@/components/MovieGrid'
 
 interface Props {
   params: { slug: string }
@@ -11,10 +12,19 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   try {
     const movie = await getMovieDetail(params.slug)
-    return { title: `${movie.name} - HaiBapFilm`, description: movie.content?.slice(0, 160) }
+    return {
+      title: `${movie.name} - HaiBapFilm`,
+      description: movie.content?.slice(0, 160) || `Xem phim ${movie.name} online miễn phí`,
+    }
   } catch {
     return { title: 'HaiBapFilm' }
   }
+}
+
+function getYouTubeId(url: string): string | null {
+  if (!url) return null
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)
+  return m ? m[1] : null
 }
 
 export default async function MovieDetailPage({ params }: Props) {
@@ -27,9 +37,30 @@ export default async function MovieDetailPage({ params }: Props) {
 
   const firstServer = movie.episodes[0]
   const firstEp = firstServer?.items[0]
+  const trailerVideoId = getYouTubeId(movie.trailerUrl)
+
+  // Fetch related movies from first category
+  const relatedMovies = movie.categories[0]
+    ? await getRelatedMovies(movie.categories[0].slug, movie.slug)
+    : []
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <Link href="/" className="hover:text-white transition-colors">Trang chủ</Link>
+        <span>/</span>
+        {movie.categories[0] && (
+          <>
+            <Link href={`/the-loai/${movie.categories[0].slug}`} className="hover:text-white transition-colors">
+              {movie.categories[0].name}
+            </Link>
+            <span>/</span>
+          </>
+        )}
+        <span className="text-gray-300 truncate max-w-xs">{movie.name}</span>
+      </nav>
+
       <div className="flex flex-col md:flex-row gap-8">
         {/* Poster */}
         <div className="w-full md:w-56 shrink-0">
@@ -56,19 +87,36 @@ export default async function MovieDetailPage({ params }: Props) {
         <div className="flex-1 space-y-4">
           <div>
             <h1 className="text-2xl font-bold text-white">{movie.name}</h1>
-            {movie.originName && <p className="text-gray-400 text-sm mt-1">{movie.originName}</p>}
+            {movie.originName && <p className="text-gray-400 text-sm mt-1 italic">{movie.originName}</p>}
           </div>
 
           {/* Meta chips */}
           <div className="flex flex-wrap gap-2 text-sm">
-            {movie.quality && <span className="bg-purple-600 text-white px-2.5 py-0.5 rounded-full">{movie.quality}</span>}
-            {movie.year > 0 && <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.year}</span>}
-            {movie.time && <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.time}</span>}
-            {movie.lang && <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.lang}</span>}
-            {movie.episodeCurrent && <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.episodeCurrent}</span>}
+            {movie.quality && (
+              <span className="bg-purple-600 text-white px-2.5 py-0.5 rounded-full">{movie.quality}</span>
+            )}
+            {movie.year > 0 && (
+              <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.year}</span>
+            )}
+            {movie.time && (
+              <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.time}</span>
+            )}
+            {movie.lang && (
+              <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.lang}</span>
+            )}
+            {movie.episodeCurrent && (
+              <span className="bg-white/10 px-2.5 py-0.5 rounded-full">{movie.episodeCurrent}</span>
+            )}
+            {movie.status && (
+              <span className={`px-2.5 py-0.5 rounded-full text-xs ${
+                movie.status === 'completed' ? 'bg-green-600/40 text-green-300' : 'bg-yellow-600/40 text-yellow-300'
+              }`}>
+                {movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}
+              </span>
+            )}
           </div>
 
-          {/* Ratings */}
+          {/* Ratings — only show if > 0 */}
           {(movie.tmdbRating > 0 || movie.imdbRating > 0) && (
             <div className="flex gap-4 text-sm">
               {movie.tmdbRating > 0 && (
@@ -78,7 +126,7 @@ export default async function MovieDetailPage({ params }: Props) {
               )}
               {movie.imdbRating > 0 && (
                 <span className="flex items-center gap-1 text-yellow-400">
-                  ⭐ IMDB {movie.imdbRating.toFixed(1)}
+                  ⭐ IMDb {movie.imdbRating.toFixed(1)}
                 </span>
               )}
             </div>
@@ -88,14 +136,18 @@ export default async function MovieDetailPage({ params }: Props) {
           {movie.categories.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {movie.categories.map(c => (
-                <Link key={c.id} href={`/the-loai/${c.slug}`} className="text-xs bg-white/10 hover:bg-purple-600/50 px-2.5 py-1 rounded-full transition-colors">
+                <Link
+                  key={c.id}
+                  href={`/the-loai/${c.slug}`}
+                  className="text-xs bg-white/10 hover:bg-purple-600/50 px-2.5 py-1 rounded-full transition-colors"
+                >
                   {c.name}
                 </Link>
               ))}
             </div>
           )}
 
-          {/* Cast */}
+          {/* Cast — only show if not empty */}
           {movie.actors.length > 0 && (
             <p className="text-sm text-gray-400">
               <span className="text-gray-200 font-medium">Diễn viên: </span>
@@ -119,7 +171,7 @@ export default async function MovieDetailPage({ params }: Props) {
             {firstEp && (
               <Link
                 href={`/watch/${movie.slug}?server=0&episode=${firstEp.slug}`}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                 Xem ngay
@@ -129,6 +181,22 @@ export default async function MovieDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Trailer */}
+      {trailerVideoId && (
+        <div className="mt-10">
+          <h2 className="text-xl font-semibold mb-4">Trailer</h2>
+          <div className="relative aspect-video max-w-2xl rounded-xl overflow-hidden bg-black">
+            <iframe
+              src={`https://www.youtube.com/embed/${trailerVideoId}`}
+              title={`${movie.name} trailer`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Episodes */}
       {movie.episodes.length > 0 && (
@@ -150,6 +218,14 @@ export default async function MovieDetailPage({ params }: Props) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Related movies */}
+      {relatedMovies.length > 0 && (
+        <div className="mt-14">
+          <h2 className="text-xl font-semibold mb-5">Phim liên quan</h2>
+          <MovieGrid movies={relatedMovies} />
         </div>
       )}
     </div>

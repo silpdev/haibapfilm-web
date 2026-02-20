@@ -13,15 +13,31 @@ export default function FavoritesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Phim yêu thích</h1>
+      <h1 className="text-2xl font-bold mb-2">Phim yêu thích</h1>
+
+      {/* Local storage notice */}
+      <p className="text-xs text-gray-600 mb-6 flex items-center gap-1.5">
+        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Danh sách yêu thích được lưu trên trình duyệt này và không đồng bộ giữa các thiết bị.
+      </p>
 
       {favs.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-16">
+          <svg className="w-14 h-14 mx-auto mb-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
-          <p>Chưa có phim yêu thích</p>
-          <Link href="/" className="text-purple-400 hover:underline mt-3 inline-block text-sm">Khám phá phim →</Link>
+          <p className="text-gray-400 text-lg">Chưa có phim yêu thích</p>
+          <p className="text-gray-600 text-sm mt-2">Nhấn ❤️ trên trang phim để lưu vào đây.</p>
+          <div className="flex gap-3 justify-center mt-6">
+            <Link href="/" className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-full text-sm font-medium transition-colors">
+              Khám phá phim
+            </Link>
+            <Link href="/danh-sach/phim-moi" className="bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-full text-sm font-medium transition-colors">
+              Phim mới nhất
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

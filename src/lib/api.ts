@@ -7,7 +7,8 @@ const FALLBACK_CDN = 'https://img.ophim.live/uploads/movies/'
 function img(path: string, cdn?: string): string {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  return `${cdn || FALLBACK_CDN}${path}`
+  const base = (cdn || FALLBACK_CDN).replace(/\/?$/, '/')
+  return `${base}${path.replace(/^\//, '')}`
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,12 +77,13 @@ export async function getHome(): Promise<{ sections: { title: string; slug: stri
 export async function getMovieList(
   type = 'phim-moi',
   page = 1,
-  filters: { category?: string; country?: string; year?: string } = {}
+  filters: { category?: string; country?: string; year?: string } = {},
+  sortField = 'modified.time',
 ): Promise<PaginatedMovies> {
   const params = new URLSearchParams({
     page: String(page),
     limit: '24',
-    sort_field: 'modified.time',
+    sort_field: sortField,
     category: filters.category || '',
     country: filters.country || '',
     year: filters.year || '',
@@ -134,4 +136,28 @@ export async function getMoviesByCategory(slug: string, page = 1): Promise<Pagin
     totalItems: json.data?.params?.pagination?.totalItems || 0,
     totalItemsPerPage: json.data?.params?.pagination?.totalItemsPerPage || 24,
   }
+}
+
+export async function getRelatedMovies(categorySlug: string, excludeSlug: string): Promise<Movie[]> {
+  try {
+    const data = await getMoviesByCategory(categorySlug, 1)
+    return data.movies.filter(m => m.slug !== excludeSlug).slice(0, 12)
+  } catch {
+    return []
+  }
+}
+
+export async function getHomeMultiSection(): Promise<{
+  newest: Movie[]
+  series: Movie[]
+  anime: Movie[]
+  featured: Movie | null
+}> {
+  const [newData, seriesData, animeData] = await Promise.all([
+    getMovieList('phim-moi', 1).catch(() => ({ movies: [] as Movie[] })),
+    getMovieList('phim-bo', 1).catch(() => ({ movies: [] as Movie[] })),
+    getMovieList('hoat-hinh', 1).catch(() => ({ movies: [] as Movie[] })),
+  ])
+  const featured = newData.movies.find(m => m.posterUrl || m.thumbUrl) || newData.movies[0] || null
+  return { newest: newData.movies, series: seriesData.movies, anime: animeData.movies, featured }
 }
