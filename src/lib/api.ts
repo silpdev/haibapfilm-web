@@ -4,11 +4,13 @@ import type { Movie, MovieDetail, PaginatedMovies, Category, Country } from './t
 const BASE = 'https://ophim1.com/v1/api'
 const FALLBACK_CDN = 'https://img.ophim.live/uploads/movies/'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function img(path: string, cdn?: string): string {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  const base = (cdn || FALLBACK_CDN).replace(/\/?$/, '/')
-  return `${base}${path.replace(/^\//, '')}`
+  // The API's APP_DOMAIN_CDN_IMAGE is a bare domain without the /uploads/movies/
+  // sub-path, so we always use the known-good FALLBACK_CDN instead.
+  return `${FALLBACK_CDN}${path.replace(/^\//, '')}`
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,7 +39,7 @@ function mapMovie(d: any, cdn?: string): Movie {
 function mapDetail(d: any, cdn?: string): MovieDetail {
   return {
     ...mapMovie(d, cdn),
-    content: d.content || '',
+    content: (d.content || '').replace(/<[^>]*>/g, '').trim(),
     trailerUrl: d.trailer_url || d.trailerUrl || '',
     actors: d.actor || [],
     directors: d.director || [],

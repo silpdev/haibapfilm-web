@@ -46,7 +46,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/5 mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-600">
-          <span>© {new Date().getFullYear()} HaiBapFilm. Dữ liệu phim từ <a href="https://ophim1.com" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400">OPhim API</a>.</span>
+          <span>© {new Date().getFullYear()} HaiBapFilm.</span>
           <span>Chỉ dùng cho mục đích học tập và nghiên cứu.</span>
         </div>
       </div>

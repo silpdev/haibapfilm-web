@@ -33,6 +33,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # public dir is optional — copy only if it exists
 COPY --from=builder /app/public ./public
 
+# Install sharp for Next.js image optimisation (required in standalone mode)
+RUN npm install --no-save sharp
+
 USER nextjs
 
 EXPOSE 3000
