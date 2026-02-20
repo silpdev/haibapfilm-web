@@ -1,0 +1,15 @@
+services:
+  haibapfilm-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: haibapfilm-web
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true   # reuse the same network as Nginx Proxy Manager
