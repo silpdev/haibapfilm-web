@@ -7,13 +7,9 @@ export async function GET(request: Request) {
   const code = url.searchParams.get('code')
   const next = url.searchParams.get('next') ?? '/'
 
-  // Behind a reverse proxy (Nginx), request.url has the internal Docker
-  // address (http://0.0.0.0:3000). Use forwarded headers for the real origin.
-  const forwardedHost  = request.headers.get('x-forwarded-host')
-  const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https'
-  const origin = forwardedHost
-    ? `${forwardedProto}://${forwardedHost}`
-    : url.origin
+  // Use explicit site URL env var to avoid issues with reverse proxies
+  // (Next.js sees internal Docker address as request.url behind Nginx).
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? url.origin
 
   if (code) {
     const cookieStore = await cookies()
@@ -34,5 +30,5 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(`${origin}${next}`)
+  return NextResponse.redirect(`${siteUrl}${next}`)
 }
