@@ -39,12 +39,45 @@ function getLocalFavorites(): Favorite[] {
 
 // ── Merge on login ─────────────────────────────────────────────────────────
 
-export async function mergeOnLogin(userId: string): Promise<void> {
+export interface ContinueWatchingItem {
+  movieSlug: string
+  episodeSlug: string
+  movieName: string
+  episodeName: string
+  thumbUrl: string
+  positionMs: number
+  durationMs: number
+}
+
+export async function mergeOnLogin(userId: string): Promise<ContinueWatchingItem | null> {
   await Promise.all([
     mergeProgress(userId),
     mergeFavorites(userId),
     mergeHistory(userId),
   ])
+  return getLatestInProgress()
+}
+
+function getLatestInProgress(): ContinueWatchingItem | null {
+  const history = getLocalHistory()
+  const sorted = history
+    .filter(h => h.durationMs > 0)
+    .filter(h => {
+      const pct = h.positionMs / h.durationMs
+      return pct >= 0.05 && pct <= 0.90
+    })
+    .sort((a, b) => b.watchedAt - a.watchedAt)
+  const item = sorted[0]
+  if (!item) return null
+  return {
+    movieSlug:   item.movieSlug,
+    episodeSlug: item.episodeSlug,
+    movieName:   item.movieName,
+    episodeName: item.episodeName ?? '',
+    thumbUrl:    item.thumbUrl ?? '',
+    positionMs:  item.positionMs,
+    durationMs:  item.durationMs,
+  }
 }
 
 async function mergeProgress(userId: string) {

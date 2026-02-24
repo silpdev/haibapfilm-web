@@ -1,5 +1,6 @@
 import { getHomeMultiSection } from '@/lib/api'
 import MovieGrid from '@/components/MovieGrid'
+import ContinueWatchingBanner from '@/components/ContinueWatchingBanner'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -8,6 +9,8 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-14">
+      <ContinueWatchingBanner />
+
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="relative h-[420px] md:h-[520px] overflow-hidden">
         {/* Background image */}
