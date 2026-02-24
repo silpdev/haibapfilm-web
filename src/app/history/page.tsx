@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getHistory, clearHistory } from '@/lib/storage'
+import { useAuth } from '@/context/AuthContext'
 import type { WatchHistoryItem } from '@/lib/types'
 
 function formatProgress(pos: number, dur: number): string {
@@ -15,6 +16,7 @@ function formatProgress(pos: number, dur: number): string {
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<WatchHistoryItem[]>([])
+  const { user } = useAuth()
 
   useEffect(() => { setHistory(getHistory()) }, [])
 
@@ -32,13 +34,22 @@ export default function HistoryPage() {
         )}
       </div>
 
-      {/* Local storage notice */}
-      <p className="text-xs text-gray-600 mb-6 flex items-center gap-1.5">
-        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Lịch sử được lưu trên trình duyệt này và không đồng bộ giữa các thiết bị.
-      </p>
+      {/* Show sync status — hide localStorage-only warning when signed in */}
+      {user ? (
+        <p className="text-xs text-green-500 mb-6 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Lịch sử đang được đồng bộ với tài khoản của bạn.
+        </p>
+      ) : (
+        <p className="text-xs text-gray-600 mb-6 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Lịch sử được lưu trên trình duyệt này và không đồng bộ giữa các thiết bị.
+        </p>
+      )}
 
       {history.length === 0 ? (
         <div className="text-center py-16">

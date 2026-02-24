@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getFavorites } from '@/lib/storage'
+import { useAuth } from '@/context/AuthContext'
 import type { Favorite } from '@/lib/types'
 
 export default function FavoritesPage() {
   const [favs, setFavs] = useState<Favorite[]>([])
+  const { user } = useAuth()
 
   useEffect(() => { setFavs(getFavorites()) }, [])
 
@@ -15,13 +17,22 @@ export default function FavoritesPage() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-2">Phim yêu thích</h1>
 
-      {/* Local storage notice */}
-      <p className="text-xs text-gray-600 mb-6 flex items-center gap-1.5">
-        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Danh sách yêu thích được lưu trên trình duyệt này và không đồng bộ giữa các thiết bị.
-      </p>
+      {/* Show sync status — hide localStorage-only warning when signed in */}
+      {user ? (
+        <p className="text-xs text-green-500 mb-6 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Yêu thích đang được đồng bộ với tài khoản của bạn.
+        </p>
+      ) : (
+        <p className="text-xs text-gray-600 mb-6 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Danh sách yêu thích được lưu trên trình duyệt này và không đồng bộ giữa các thiết bị.
+        </p>
+      )}
 
       {favs.length === 0 ? (
         <div className="text-center py-16">
