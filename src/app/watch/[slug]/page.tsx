@@ -2,6 +2,7 @@ import { getMovieDetail } from '@/lib/api'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import VideoPlayer from '@/components/VideoPlayer'
+import ViewTracker from '@/components/ViewTracker'
 
 interface Props {
   params: { slug: string }
@@ -11,7 +12,15 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   try {
     const movie = await getMovieDetail(params.slug)
-    return { title: `Xem: ${movie.name} - HaiBapFilm` }
+    const imageUrl = movie.thumbUrl || movie.posterUrl
+    return {
+      title: `Xem: ${movie.name} - HaiBapFilm`,
+      description: `Xem phim ${movie.name} online miễn phí, chất lượng cao, phụ đề tiếng Việt.`,
+      openGraph: {
+        title: `Xem: ${movie.name}`,
+        images: imageUrl ? [imageUrl] : [],
+      },
+    }
   } catch {
     return { title: 'HaiBapFilm' }
   }
@@ -68,6 +77,7 @@ export default async function WatchPage({ params, searchParams }: Props) {
         episodeName={episode.name}
         serverName={server.serverName}
       />
+      <ViewTracker slug={movie.slug} name={movie.name} thumbUrl={movie.thumbUrl} />
 
       {/* Title + Prev/Next — directly below player */}
       <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

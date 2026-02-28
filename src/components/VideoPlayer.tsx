@@ -15,6 +15,8 @@ export default function VideoPlayer({ movie, episode, episodeName }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState('')
   const [useEmbed, setUseEmbed] = useState(false)
+  const [isPiP, setIsPiP] = useState(false)
+  const [pipSupported, setPipSupported] = useState(false)
 
   useEffect(() => {
     setError('')
@@ -60,6 +62,30 @@ export default function VideoPlayer({ movie, episode, episodeName }: Props) {
     init()
     return () => { hls?.destroy() }
   }, [episode.linkM3u8, episode.slug, movie.slug])
+
+  // PiP support detection + event listeners
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    setPipSupported(document.pictureInPictureEnabled && !video.disablePictureInPicture)
+    const onEnter = () => setIsPiP(true)
+    const onLeave = () => setIsPiP(false)
+    video.addEventListener('enterpictureinpicture', onEnter)
+    video.addEventListener('leavepictureinpicture', onLeave)
+    return () => {
+      video.removeEventListener('enterpictureinpicture', onEnter)
+      video.removeEventListener('leavepictureinpicture', onLeave)
+    }
+  }, [])
+
+  async function togglePiP() {
+    if (!videoRef.current) return
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture()
+    } else {
+      await videoRef.current.requestPictureInPicture().catch(() => {})
+    }
+  }
 
   // Save progress every 5s
   useEffect(() => {
@@ -110,13 +136,31 @@ export default function VideoPlayer({ movie, episode, episodeName }: Props) {
   }
 
   return (
-    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative">
+    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative group/player">
       <video
         ref={videoRef}
         className="w-full h-full"
         controls
         playsInline
       />
+      {/* PiP button — visible on hover, only when supported and no error */}
+      {pipSupported && !error && (
+        <button
+          onClick={togglePiP}
+          title={isPiP ? 'Thoát mini player' : 'Mini player (PiP)'}
+          className="absolute top-2 right-2 opacity-0 group-hover/player:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white rounded-md p-1.5 z-10"
+        >
+          {isPiP ? (
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 3H3a2 2 0 00-2 2v14a2 2 0 002 2h18a2 2 0 002-2V5a2 2 0 00-2-2zm0 16H3V5h18v14zm-9-7h-2v2H8v-2H6v2a2 2 0 002 2h4a2 2 0 002-2v-2zm-1-4l-4 4h3v4h2v-4h3l-4-4z" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3C1.9 3 1 3.88 1 4.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V5h18v14.02z" />
+            </svg>
+          )}
+        </button>
+      )}
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3">
           <p className="text-red-400 text-sm">{error}</p>

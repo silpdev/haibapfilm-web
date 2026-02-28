@@ -4,17 +4,44 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import FavoriteButton from '@/components/FavoriteButton'
 import MovieGrid from '@/components/MovieGrid'
+import type { Metadata } from 'next'
 
 interface Props {
   params: { slug: string }
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const movie = await getMovieDetail(params.slug)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://film.lamphusi.tech'
+    const imageUrl = movie.posterUrl || movie.thumbUrl
+    const description = movie.content?.slice(0, 160) || `Xem phim ${movie.name} online miễn phí, chất lượng cao, phụ đề tiếng Việt.`
+    const keywords = [
+      movie.name, movie.originName,
+      ...movie.categories.map(c => c.name),
+      'xem phim online', 'phim vietsub', 'phim thuyết minh',
+    ].filter(Boolean).join(', ')
+
     return {
-      title: `${movie.name} - HaiBapFilm`,
-      description: movie.content?.slice(0, 160) || `Xem phim ${movie.name} online miễn phí`,
+      title: `${movie.name} (${movie.year}) - HaiBapFilm`,
+      description,
+      keywords,
+      openGraph: {
+        title: movie.name,
+        description,
+        url: `${siteUrl}/movie/${params.slug}`,
+        siteName: 'HaiBapFilm',
+        images: imageUrl ? [{ url: imageUrl, width: 300, height: 450, alt: movie.name }] : [],
+        type: 'video.movie',
+        locale: 'vi_VN',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: movie.name,
+        description,
+        images: imageUrl ? [imageUrl] : [],
+      },
+      alternates: { canonical: `${siteUrl}/movie/${params.slug}` },
     }
   } catch {
     return { title: 'HaiBapFilm' }
@@ -228,6 +255,29 @@ export default async function MovieDetailPage({ params }: Props) {
           <MovieGrid movies={relatedMovies} />
         </div>
       )}
+
+      {/* JSON-LD structured data for Google */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Movie',
+          name: movie.name,
+          alternateName: movie.originName,
+          description: movie.content?.slice(0, 300),
+          image: movie.posterUrl || movie.thumbUrl,
+          dateCreated: movie.year ? String(movie.year) : undefined,
+          genre: movie.categories.map(c => c.name),
+          actor: movie.actors.slice(0, 5).map(a => ({ '@type': 'Person', name: a })),
+          director: movie.directors.map(d => ({ '@type': 'Person', name: d })),
+          aggregateRating: movie.tmdbRating > 0 ? {
+            '@type': 'AggregateRating',
+            ratingValue: movie.tmdbRating,
+            ratingCount: 100,
+            bestRating: 10,
+          } : undefined,
+        }) }}
+      />
     </div>
   )
 }

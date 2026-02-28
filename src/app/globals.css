@@ -2,20 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark theme (default) */
+:root, html.dark {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --border: rgba(255,255,255,0.1);
+  --scrollbar-track: #1a1a1a;
+  --scrollbar-thumb: #444;
+  --scrollbar-thumb-hover: #666;
+  --skeleton: #2a2a2a;
+}
+
+/* Light theme */
+html:not(.dark) {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.08);
+  --scrollbar-track: #e2e8f0;
+  --scrollbar-thumb: #94a3b8;
+  --scrollbar-thumb-hover: #64748b;
+  --skeleton: #e2e8f0;
+}
+
 body {
-  background-color: #0f0f0f;
-  color: #e0e0e0;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #1a1a1a; }
-::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #666; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
-/* Hide scrollbar for genre chips row */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-/* Dark select options */
 select option { background-color: #1a1a1a; color: #e0e0e0; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--skeleton) 25%, color-mix(in srgb, var(--skeleton) 60%, white) 50%, var(--skeleton) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

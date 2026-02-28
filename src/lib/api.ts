@@ -100,8 +100,15 @@ export async function getMovieList(
   }
 }
 
-export async function searchMovies(keyword: string, page = 1): Promise<PaginatedMovies> {
+export async function searchMovies(
+  keyword: string,
+  page = 1,
+  filters: { category?: string; country?: string; year?: string } = {},
+): Promise<PaginatedMovies> {
   const params = new URLSearchParams({ keyword, page: String(page), limit: '24' })
+  if (filters.category) params.set('category', filters.category)
+  if (filters.country) params.set('country', filters.country)
+  if (filters.year) params.set('year', filters.year)
   const json = await get(`/tim-kiem?${params}`)
   const cdn = json.data?.APP_DOMAIN_CDN_IMAGE || FALLBACK_CDN
   return {

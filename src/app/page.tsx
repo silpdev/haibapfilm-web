@@ -1,8 +1,10 @@
 import { getHomeMultiSection } from '@/lib/api'
 import MovieGrid from '@/components/MovieGrid'
 import ContinueWatchingBanner from '@/components/ContinueWatchingBanner'
+import TrendingSection from '@/components/TrendingSection'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Suspense } from 'react'
 
 export default async function HomePage() {
   const { newest, series, anime, featured } = await getHomeMultiSection()
@@ -80,6 +82,11 @@ export default async function HomePage() {
 
       {/* ── Content sections ──────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 space-y-14 pb-8">
+        {/* 🔥 Trending hôm nay */}
+        <Suspense fallback={null}>
+          <TrendingSection />
+        </Suspense>
+
         {/* Phim Mới */}
         <section>
           <div className="flex items-center justify-between mb-5">

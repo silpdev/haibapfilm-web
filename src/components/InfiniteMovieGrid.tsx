@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { Movie } from '@/lib/types'
 import MovieCard from './MovieCard'
+import MovieCardSkeleton from './MovieCardSkeleton'
 
 interface Props {
   initialMovies: Movie[]
@@ -64,19 +65,17 @@ export default function InfiniteMovieGrid({ initialMovies, initialPage, totalPag
         {movies.map(m => <MovieCard key={m.id || m.slug} movie={m} />)}
       </div>
 
+      {/* Skeleton rows while loading more */}
+      {loading && (
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <MovieCardSkeleton key={i} />)}
+        </div>
+      )}
+
       {/* Sentinel — triggers load when scrolled into view */}
-      <div ref={sentinelRef} className="mt-10 flex justify-center min-h-[48px]">
-        {loading && (
-          <div className="flex items-center gap-2 text-gray-400">
-            <svg className="animate-spin w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <span className="text-sm">Đang tải thêm...</span>
-          </div>
-        )}
-        {!hasMore && !loading && (
-          <p className="text-xs text-gray-600">Đã hiển thị tất cả phim</p>
+      <div ref={sentinelRef} className="mt-6 flex justify-center min-h-[24px]">
+        {!hasMore && !loading && movies.length > 0 && (
+          <p className="text-xs text-gray-500">Đã hiển thị tất cả phim</p>
         )}
       </div>
     </div>

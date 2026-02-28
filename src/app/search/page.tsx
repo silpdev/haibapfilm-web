@@ -1,15 +1,18 @@
-import { searchMovies } from '@/lib/api'
+import { searchMovies, getCategories, getCountries } from '@/lib/api'
 import MovieGrid from '@/components/MovieGrid'
 import Pagination from '@/components/Pagination'
 import SearchBar from '@/components/SearchBar'
+import SearchFilters from '@/components/SearchFilters'
 import { Suspense } from 'react'
 
 interface Props {
-  searchParams: { q?: string; page?: string }
+  searchParams: { q?: string; page?: string; category?: string; country?: string; year?: string }
 }
 
-async function Results({ q, page }: { q: string; page: number }) {
-  const data = await searchMovies(q, page).catch(() => ({
+async function Results({
+  q, page, category, country, year,
+}: { q: string; page: number; category: string; country: string; year: string }) {
+  const data = await searchMovies(q, page, { category, country, year }).catch(() => ({
     movies: [],
     currentPage: 1,
     totalItems: 0,
@@ -23,7 +26,7 @@ async function Results({ q, page }: { q: string; page: number }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <p className="text-lg">Không tìm thấy phim nào cho &quot;{q}&quot;</p>
-        <p className="text-sm mt-2">Thử tìm với từ khóa khác hoặc kiểm tra chính tả.</p>
+        <p className="text-sm mt-2">Thử tìm với từ khóa khác hoặc bỏ bộ lọc.</p>
       </div>
     )
   }
@@ -39,18 +42,30 @@ async function Results({ q, page }: { q: string; page: number }) {
   )
 }
 
-export default function SearchPage({ searchParams }: Props) {
+export default async function SearchPage({ searchParams }: Props) {
   const q = searchParams.q || ''
   const page = Math.max(1, parseInt(searchParams.page || '1', 10))
+  const category = searchParams.category || ''
+  const country = searchParams.country || ''
+  const year = searchParams.year || ''
+
+  const [categories, countries] = await Promise.all([
+    getCategories().catch(() => []),
+    getCountries().catch(() => []),
+  ])
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Tìm kiếm phim</h1>
 
-      {/* Search input always visible on this page */}
-      <div className="mb-8">
+      <div className="mb-6">
         <SearchBar defaultValue={q} />
       </div>
+
+      {/* Filters */}
+      <Suspense fallback={null}>
+        <SearchFilters categories={categories} countries={countries} />
+      </Suspense>
 
       {q ? (
         <Suspense fallback={
@@ -60,7 +75,7 @@ export default function SearchPage({ searchParams }: Props) {
             ))}
           </div>
         }>
-          <Results q={q} page={page} />
+          <Results q={q} page={page} category={category} country={country} year={year} />
         </Suspense>
       ) : (
         <div className="text-center py-16 text-gray-500">
