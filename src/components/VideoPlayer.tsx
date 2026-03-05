@@ -9,9 +9,14 @@ interface Props {
   episode: EpisodeItem
   episodeName: string
   serverName: string
+  // Watch Party props
+  isGuestInParty?: boolean
+  externalSeek?: { posMs: number; id: number } | null
+  guestPaused?: boolean
+  onPositionChange?: (posMs: number, isPlaying: boolean) => void
 }
 
-export default function VideoPlayer({ movie, episode, episodeName }: Props) {
+export default function VideoPlayer({ movie, episode, episodeName, isGuestInParty, externalSeek, guestPaused, onPositionChange }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState('')
   const [useEmbed, setUseEmbed] = useState(false)
@@ -87,7 +92,7 @@ export default function VideoPlayer({ movie, episode, episodeName }: Props) {
     }
   }
 
-  // Save progress every 5s
+  // Save progress every 5s + broadcast to party if host
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
@@ -107,11 +112,18 @@ export default function VideoPlayer({ movie, episode, episodeName }: Props) {
         durationMs: durMs,
         watchedAt: Date.now(),
       })
+      onPositionChange?.(posMs, !video.paused)
     }
 
     let interval: ReturnType<typeof setInterval>
-    function onPlay() { interval = setInterval(onTimeUpdate, 5000) }
-    function onPause() { clearInterval(interval); onTimeUpdate() }
+    function onPlay() {
+      interval = setInterval(onTimeUpdate, 5000)
+      onPositionChange?.(video!.currentTime * 1000, true)
+    }
+    function onPause() {
+      clearInterval(interval)
+      onTimeUpdate()
+    }
 
     video.addEventListener('play', onPlay)
     video.addEventListener('pause', onPause)
@@ -120,7 +132,24 @@ export default function VideoPlayer({ movie, episode, episodeName }: Props) {
       video.removeEventListener('play', onPlay)
       video.removeEventListener('pause', onPause)
     }
-  }, [episode.slug, movie.slug, movie.name, movie.thumbUrl, episodeName])
+  }, [episode.slug, movie.slug, movie.name, movie.thumbUrl, episodeName, onPositionChange])
+
+  // Watch Party: seek video khi nhận lệnh từ host
+  useEffect(() => {
+    if (!externalSeek || !videoRef.current) return
+    const video = videoRef.current
+    const currentMs = video.currentTime * 1000
+    // Chỉ seek nếu lệch > 5 giây
+    if (Math.abs(currentMs - externalSeek.posMs) > 5000) {
+      video.currentTime = externalSeek.posMs / 1000
+    }
+  }, [externalSeek?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Watch Party: pause khi host pause hoặc host rời phòng
+  useEffect(() => {
+    if (!videoRef.current) return
+    if (guestPaused) videoRef.current.pause()
+  }, [guestPaused])
 
   if (useEmbed && episode.linkEmbed) {
     return (
@@ -143,6 +172,20 @@ export default function VideoPlayer({ movie, episode, episodeName }: Props) {
         controls
         playsInline
       />
+      {/* Watch Party: overlay block controls for guests */}
+      {isGuestInParty && (
+        <div
+          className="absolute inset-0 z-10 cursor-not-allowed"
+          title="Host đang điều khiển"
+        >
+          <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+            </svg>
+            Host điều khiển
+          </div>
+        </div>
+      )}
       {/* PiP button — visible on hover, only when supported and no error */}
       {pipSupported && !error && (
         <button

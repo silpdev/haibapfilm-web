@@ -1,12 +1,12 @@
 import { getMovieDetail } from '@/lib/api'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import VideoPlayer from '@/components/VideoPlayer'
+import WatchPageClient from '@/components/WatchPageClient'
 import ViewTracker from '@/components/ViewTracker'
 
 interface Props {
   params: { slug: string }
-  searchParams: { server?: string; episode?: string }
+  searchParams: { server?: string; episode?: string; party?: string }
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -70,12 +70,13 @@ export default async function WatchPage({ params, searchParams }: Props) {
         <span className="text-gray-300">Tập {episode.name}</span>
       </div>
 
-      {/* Player */}
-      <VideoPlayer
+      {/* Player + Watch Party */}
+      <WatchPageClient
         movie={movie}
         episode={episode}
         episodeName={episode.name}
         serverName={server.serverName}
+        initialPartyCode={searchParams.party?.toUpperCase() || null}
       />
       <ViewTracker slug={movie.slug} name={movie.name} thumbUrl={movie.thumbUrl} />
 
