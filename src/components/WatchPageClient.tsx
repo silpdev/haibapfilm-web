@@ -138,6 +138,13 @@ export default function WatchPageClient({
         members={members}
         connected={connected}
         hostLeft={hostLeft}
+        movieSlug={movie.slug}
+        episodeSlug={episode.slug}
+        serverName={serverName}
+        movieTitle={movie.name}
+        moviePosterUrl={movie.posterUrl || movie.thumbUrl || ''}
+        movieDescription={movie.content || ''}
+        episodeName={episodeName}
         onCreateParty={handleCreateParty}
         onJoinParty={handleJoinParty}
         onLeaveParty={handleLeaveParty}

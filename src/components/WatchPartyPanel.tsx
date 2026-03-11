@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { WatchPartyMember } from '@/hooks/useWatchParty'
+import ScheduleWatchPartyModal from '@/components/ScheduleWatchPartyModal'
 
 interface Props {
   user: User | null
@@ -11,6 +12,13 @@ interface Props {
   members: WatchPartyMember[]
   connected: boolean
   hostLeft: boolean
+  movieSlug: string
+  episodeSlug: string
+  serverName: string
+  movieTitle: string
+  moviePosterUrl: string
+  movieDescription: string
+  episodeName: string
   onCreateParty: () => Promise<void>
   onJoinParty: (code: string) => Promise<void>
   onLeaveParty: () => void
@@ -24,6 +32,13 @@ export default function WatchPartyPanel({
   members,
   connected,
   hostLeft,
+  movieSlug,
+  episodeSlug,
+  serverName,
+  movieTitle,
+  moviePosterUrl,
+  movieDescription,
+  episodeName,
   onCreateParty,
   onJoinParty,
   onLeaveParty,
@@ -34,6 +49,7 @@ export default function WatchPartyPanel({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
   const joinInputRef = useRef<HTMLInputElement>(null)
 
   const isInParty = !!partyCode
@@ -79,6 +95,19 @@ export default function WatchPartyPanel({
 
   return (
     <div className="mt-4">
+      {showSchedule && (
+        <ScheduleWatchPartyModal
+          movieSlug={movieSlug}
+          episodeSlug={episodeSlug}
+          serverName={serverName}
+          movieTitle={movieTitle}
+          moviePosterUrl={moviePosterUrl}
+          movieDescription={movieDescription}
+          episodeName={episodeName}
+          onScheduled={() => setShowSchedule(false)}
+          onClose={() => setShowSchedule(false)}
+        />
+      )}
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(o => !o)}
@@ -122,6 +151,16 @@ export default function WatchPartyPanel({
               <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
                 Xem phim cùng bạn bè
               </p>
+
+              <button
+                onClick={() => { setShowSchedule(true); setError('') }}
+                className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm py-2 px-4 rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" />
+                </svg>
+                Hẹn giờ cùng xem
+              </button>
 
               <button
                 onClick={handleCreate}
